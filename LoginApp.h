@@ -5,20 +5,9 @@
 #ifndef INC_345MF_LOGINAPP_H
 #define INC_345MF_LOGINAPP_H
 
-#include <fstream>
-#include <string>
-#include <unistd.h>
-#include <gtk/gtk.h>
-#include <vector>
-#include "postgres.h"
+#include "main_settings.h"
 
 #define ERROR_LOGIN 11
-
-#define CHECKPOINT 1
-#define DIRECTOR 2
-#define SYS_ADMIN 3
-#define MOST_DIRECTOR 4
-#define CLOSE_LOGIN_APP 0
 
 
 //Виджеты окна авторизации
@@ -36,7 +25,7 @@ bool flag = false;
 /* создание окна авторизации*/
 static void create_window_login();
 
-int login_window(int argc, char *argv[], int& type_user);
+int login_window(int argc, char *argv[]);
 
 G_MODULE_EXPORT void window_destroy_lapp(GtkWidget *object);
 
@@ -49,15 +38,15 @@ std::string login;
 static void create_window_login()
 {
     GtkBuilder *builder;
-    GError* error = NULL;
+    GError* error = nullptr;
 
     builder = gtk_builder_new();
-    if(!gtk_builder_add_from_file(builder, "./LoginApp.glade", &error)){
+    if(!gtk_builder_add_from_file(builder, path_glade, &error)){
         g_critical("Не могу загрузить файл: %s", error->message);
         g_error_free(error);
     }
 
-    gtk_builder_connect_signals(builder, NULL);
+    gtk_builder_connect_signals(builder, nullptr);
 
     if(!(windowA = GTK_WIDGET(gtk_builder_get_object(builder, "LoginWindow"))))
         g_critical("Ошибка при получении виджета окна\n");
@@ -72,7 +61,7 @@ static void create_window_login()
     g_object_unref(builder);
 }
 
-int login_window(int argc, char *argv[], int& type_user){
+int login_window(int argc, char *argv[]){
     gtk_init(&argc, &argv);
     create_window_login();
     g_signal_connect(G_OBJECT(windowA), "destroy", G_CALLBACK(window_destroy_lapp), NULL);
@@ -82,13 +71,13 @@ int login_window(int argc, char *argv[], int& type_user){
     gtk_main ();
     if (flag) {
         if (name_role == "controller") {
-            type_user = CHECKPOINT;
+            type_user = 0;
         } else if (name_role == "cheif_admin") {
-            type_user = DIRECTOR;
+            type_user = 0;
         } else if (name_role == "global_admin") {
-            type_user = SYS_ADMIN;
+            type_user = 0;
         } else if (name_role == "most_cheif_admin") {
-            type_user = MOST_DIRECTOR;
+            type_user = 0;
         } else {
             journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
                     << (time(nullptr) % (3600)) / 60 << ":" << (time(nullptr) % (60))
