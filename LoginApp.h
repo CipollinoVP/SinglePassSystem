@@ -33,8 +33,6 @@ G_MODULE_EXPORT void authorizate_button (GtkWidget *object);
 
 std::string name_role;
 
-std::string login;
-
 static void create_window_login()
 {
     GtkBuilder *builder;
@@ -70,14 +68,18 @@ int login_window(int argc, char *argv[]){
     gtk_widget_show(windowA);
     gtk_main ();
     if (flag) {
-        if (name_role == "controller") {
-            type_user = 0;
-        } else if (name_role == "cheif_admin") {
-            type_user = 0;
-        } else if (name_role == "global_admin") {
-            type_user = 0;
+        if (name_role == "controller_by_walk") {
+            type_user = CHECKPOINT_AFOOT;
+        } else if (name_role == "controller_car") {
+            type_user = CHECKPOINT_CAR;
         } else if (name_role == "most_cheif_admin") {
-            type_user = 0;
+            type_user = MATCHING_BOSS;
+        } else if (name_role == "cheif_admin") {
+            type_user = ORDER_BOSS;
+        } else if (name_role == "tenant") {
+            type_user = ORDER_TENANT;
+        } else if (name_role == "global_admin") {
+            type_user = ADMIN;
         } else {
             journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
                     << (time(nullptr) % (3600)) / 60 << ":" << (time(nullptr) % (60))

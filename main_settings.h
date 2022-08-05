@@ -23,6 +23,10 @@
 
 int type_user = 0;
 
+std::string login;
+
+int id_user;
+
 std::ofstream journal("./log.txt",std::ios::app);
 
 void journal_init(){
