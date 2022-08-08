@@ -30,5 +30,6 @@ int main(int argc, char *argv[]) {
     id_worker = get_id_worker();
     id_user = get_id_user();
     SinglePassApp(argc,argv);
+    PQfinish(conn);
     return 0;
 }

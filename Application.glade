@@ -2,6 +2,78 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkWindow" id="DeclineDialog">
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Опишите причину отказа</property>
+            <attributes>
+              <attribute name="size" value="13312"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="CommentaryDeclineEntry">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <!-- n-columns=2 n-rows=1 -->
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <child>
+              <object class="GtkButton" id="DeclineButtonDialog">
+                <property name="label" translatable="yes">Отправить</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="CancelButtonDialog2">
+                <property name="label" translatable="yes">Отмена</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkDialog" id="DialogSinglePass">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Пропускная система: подтверждение</property>
@@ -259,6 +331,16 @@
       <column type="gchararray"/>
     </columns>
   </object>
+  <object class="GtkListStore" id="MessengerList">
+    <columns>
+      <!-- column-name Sender -->
+      <column type="gchararray"/>
+      <!-- column-name Message -->
+      <column type="gchararray"/>
+      <!-- column-name Time -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="MessengerWindow">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Пропускная система: мессенджер</property>
@@ -314,8 +396,8 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="OpenButton">
-                <property name="label" translatable="yes">Просмотреть</property>
+              <object class="GtkButton" id="MessengerModeButton">
+                <property name="label" translatable="yes">Мессенджер</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
@@ -326,6 +408,30 @@
                 <property name="position">3</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkButton" id="BackButton">
+                <property name="label" translatable="yes">Назад</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="StatusLabelMessenger">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="left-attach">0</property>
@@ -333,15 +439,14 @@
           </packing>
         </child>
         <child>
-          <!-- n-columns=3 n-rows=1 -->
+          <!-- n-columns=4 n-rows=1 -->
           <object class="GtkGrid">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="margin-bottom">65</property>
             <child>
               <!-- n-columns=2 n-rows=5 -->
-              <object class="GtkGrid">
-                <property name="visible">True</property>
+              <object class="GtkGrid" id="ReadMessageGrid">
                 <property name="can-focus">False</property>
                 <child>
                   <object class="GtkLabel">
@@ -397,7 +502,7 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <child>
-                          <object class="GtkLabel" id="MeddageLabel">
+                          <object class="GtkLabel" id="MessageLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                           </object>
@@ -468,9 +573,8 @@
               </packing>
             </child>
             <child>
-              <!-- n-columns=2 n-rows=3 -->
-              <object class="GtkGrid">
-                <property name="visible">True</property>
+              <!-- n-columns=2 n-rows=4 -->
+              <object class="GtkGrid" id="EnterMessageGrid">
                 <property name="can-focus">False</property>
                 <child>
                   <object class="GtkLabel">
@@ -506,7 +610,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry">
+                  <object class="GtkEntry" id="AdressatEntry">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                   </object>
@@ -516,7 +620,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry">
+                  <object class="GtkEntry" id="TitleEntry">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                   </object>
@@ -526,13 +630,35 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry">
+                  <object class="GtkEntry" id="MessageEntry">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                   </object>
                   <packing>
                     <property name="left-attach">1</property>
                     <property name="top-attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="SendButton">
+                    <property name="label" translatable="yes">Отправить</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
+                    <property name="top-attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">3</property>
                   </packing>
                 </child>
               </object>
@@ -542,9 +668,9 @@
               </packing>
             </child>
             <child>
-              <object class="GtkScrolledWindow">
+              <object class="GtkScrolledWindow" id="WidgetListMessages">
                 <property name="width-request">270</property>
-                <property name="visible">True</property>
+                <property name="height-request">200</property>
                 <property name="can-focus">True</property>
                 <property name="shadow-type">in</property>
                 <child>
@@ -556,6 +682,7 @@
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="model">MessageChooseList</property>
+                        <property name="search-column">0</property>
                         <child internal-child="selection">
                           <object class="GtkTreeSelection"/>
                         </child>
@@ -599,6 +726,66 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="width-request">300</property>
+                <property name="can-focus">True</property>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkViewport">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkTreeView" id="MessengerView">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="model">MessengerList</property>
+                        <child internal-child="selection">
+                          <object class="GtkTreeSelection"/>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="SenderColumn">
+                            <property name="title" translatable="yes">Отправитель</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="SenderText"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="MessageColumn">
+                            <property name="title" translatable="yes">Сообщение</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="MessageText"/>
+                              <attributes>
+                                <attribute name="text">1</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="TimeMessageColumn">
+                            <property name="title" translatable="yes">Время</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="TimeMessageText"/>
+                              <attributes>
+                                <attribute name="text">2</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="left-attach">3</property>
                 <property name="top-attach">0</property>
               </packing>
             </child>

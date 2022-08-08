@@ -61,6 +61,15 @@ GtkWidget *ReSendOrderButton;
 GtkWidget *CheckpointButton;
 GtkWidget *PassesView;
 
+//Виджеты диалога отказа
+GtkWidget *CommentaryDeclineEntry;
+GtkWidget *CancelButtonDialog2;
+GtkWidget *DeclineButtonDialog;
+GtkWidget *DeclineDialog;
+
+bool not_use_dialog = true;
+bool result_dialog = false;
+
 static void create_window_SinglePassApp();
 
 int SinglePassApp(int argc, char *argv[]);
@@ -98,6 +107,10 @@ G_MODULE_EXPORT void ReSendOrderButton_click(GtkWidget *object);
 G_MODULE_EXPORT void CheckpointButton_click(GtkWidget *object);
 
 G_MODULE_EXPORT void PassesView_cursor_changed(GtkWidget *object);
+
+G_MODULE_EXPORT void DeclineButtonDialog_click(GtkWidget *object);
+
+G_MODULE_EXPORT void CancelButtonDialog_click(GtkWidget *object);
 
 void list_view_refresh();
 
@@ -299,7 +312,7 @@ void FuturePassButton_click(GtkWidget *object){
 };
 
 void MessengerButton_click(GtkWidget *object){
-
+    messenger();
 };
 
 void CancelButton_click(GtkWidget *object){
@@ -309,6 +322,7 @@ void CancelButton_click(GtkWidget *object){
         list_pass[selected].id << ";";
         PGresult *res = PQexec(conn,query.str().c_str());
     }
+    list_view_refresh();
 };
 
 void AcceptButton_click(GtkWidget *object){
@@ -324,15 +338,29 @@ void AcceptButton_click(GtkWidget *object){
 };
 
 void DeclineButton_click(GtkWidget *object){
-    std::stringstream query;
-    query << "UPDATE single_passes SET status_pass = false WHERE id = " <<
-          list_pass[selected].id << ";";
-    std::stringstream query1;
-    query1 << "UPDATE single_passes SET status_appology = false WHERE id = " <<
-           list_pass[selected].id << ";";
-    PGresult *res = PQexec(conn,query.str().c_str());
-    PGresult *res1 = PQexec(conn,query1.str().c_str());
-    list_view_refresh();
+    GtkBuilder *builder;
+    GError* error = nullptr;
+
+    builder = gtk_builder_new();
+    if(!gtk_builder_add_from_file(builder, path_glade, &error)){
+        g_critical("Не могу загрузить файл: %s", error->message);
+        g_error_free(error);
+    }
+
+    gtk_builder_connect_signals(builder, nullptr);
+    if(!(CommentaryDeclineEntry = GTK_WIDGET(gtk_builder_get_object(builder, "CommentaryDeclineEntry"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(DeclineDialog = GTK_WIDGET(gtk_builder_get_object(builder, "DeclineDialog"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(DeclineButtonDialog = GTK_WIDGET(gtk_builder_get_object(builder, "DeclineButtonDialog"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(CancelButtonDialog2 = GTK_WIDGET(gtk_builder_get_object(builder, "CancelButtonDialog2"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    g_object_unref(builder);
+    g_signal_connect(G_OBJECT(DeclineDialog),"destroy",G_CALLBACK(CancelButtonDialog_click),NULL);
+    g_signal_connect(G_OBJECT(DeclineDialog),"destroy-event",G_CALLBACK(CancelButtonDialog_click),NULL);
+    g_signal_connect(G_OBJECT(CancelButtonDialog2),"clicked",G_CALLBACK(CancelButtonDialog_click),NULL);
+    g_signal_connect(G_OBJECT(DeclineButtonDialog),"clicked",G_CALLBACK(DeclineButtonDialog_click),NULL);
 };
 
 void SearchEntry_edit(GtkWidget *object){
@@ -634,7 +662,7 @@ void list_view_refresh(){
                                8,s_pass.time_query.c_str(),9,status_str.c_str(),10,director_surname.c_str(),
                                11,s_pass.type_document.c_str(),12,s_pass.number_document.c_str(),13,s_pass.num_auto.c_str(),
                                14,s_pass.commentary.c_str(),15,s_pass.enter_time.c_str(),16,s_pass.exit_time.c_str(),
-                               17,input_table);
+                               17,input_table,-1);
         }
     }
 }
@@ -650,5 +678,24 @@ void PassesView_cursor_changed(GtkWidget *object){
     }
     selected = *a;
 }
+
+void DeclineButtonDialog_click(GtkWidget *object){
+    std::stringstream query;
+    query << "UPDATE single_passes SET status_pass = false WHERE id = " <<
+          list_pass[selected].id << ";";
+    std::stringstream query1;
+    query1 << "UPDATE single_passes SET status_appology = false WHERE id = " <<
+           list_pass[selected].id << ";";
+    PGresult *res = PQexec(conn,query.str().c_str());
+    PGresult *res1 = PQexec(conn,query1.str().c_str());
+    std::stringstream query2;
+    query2 << "SELECT id FROM register_user WHERE id_workers = " << list_pass[selected].id_director << ";";
+    PGresult *res2 = PQexec(conn,query2.str().c_str());
+    list_view_refresh();
+}
+
+void CancelButtonDialog_click(GtkWidget *object){
+
+};
 
 #endif //SINGLEPASSSYSTEM_SINGLEPASSAPP_H
