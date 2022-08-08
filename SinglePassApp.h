@@ -7,6 +7,7 @@
 
 #include "main_settings.h"
 #include "OrderPassApp.h"
+#include "MessengerApp.h"
 
 //Режимы вывода информации
 #define ADMIT 1
@@ -99,31 +100,6 @@ G_MODULE_EXPORT void CheckpointButton_click(GtkWidget *object);
 G_MODULE_EXPORT void PassesView_cursor_changed(GtkWidget *object);
 
 void list_view_refresh();
-
-struct s_single_pass{
-    int id = 0;
-    std::string surname;
-    std::string name;
-    std::string fathername;
-    bool status_factory = false;
-    int id_director = 0;
-    std::string type_document;
-    std::string number_document;
-    bool status_pass = false;
-    std::string organization;
-    std::string date_query;
-    std::string time_query;
-    std::string date_pass;
-    std::string time_pass;
-    std::string enter_time;
-    std::string exit_time;
-    bool pass_using = false;
-    bool driver = false;
-    std::string num_auto;
-    std::string organization_custom;
-    int status_appology = -1;
-    std::string commentary;
-};
 
 std::vector<s_single_pass> list_pass(0);
 
@@ -327,7 +303,12 @@ void MessengerButton_click(GtkWidget *object){
 };
 
 void CancelButton_click(GtkWidget *object){
-
+    if (selected != -1) {
+        std::stringstream query;
+        query << "DELETE FROM single_passes WHERE id = " <<
+        list_pass[selected].id << ";";
+        PGresult *res = PQexec(conn,query.str().c_str());
+    }
 };
 
 void AcceptButton_click(GtkWidget *object){
@@ -355,28 +336,76 @@ void DeclineButton_click(GtkWidget *object){
 };
 
 void SearchEntry_edit(GtkWidget *object){
-
+    list_view_refresh();
 };
 
 void EditOrderButton_click(GtkWidget *object){
-
+    if (selected != -1) {
+        EditPassApp(list_pass[selected]);
+    }
 };
 
 void ReSendOrderButton_click(GtkWidget *object){
-
+    if (selected != -1) {
+        std::stringstream query;
+        query << "UPDATE single_passes SET status_appology = NULL WHERE id = " <<
+        list_pass[selected].id << ";";
+        PGresult *rs = PQexec(conn,query.str().c_str());
+        list_view_refresh();
+    }
 };
 
 void CheckpointButton_click(GtkWidget *object){
-
+    if (selected != -1) {
+        std::stringstream query1;
+        query1 << "SELECT status_factory FROM single_passes WHERE id = " << list_pass[selected].id << ";";
+        PGresult *res1 = PQexec(conn,query1.str().c_str());
+        char *r1 = PQgetvalue(res1,0,0);
+        if (r1 == nullptr) {
+            journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
+                    << (time(nullptr) % (3600)) / 60 << ":" << (time(nullptr) % (60)) <<
+                    ": Development error: SinglePassApp.h:367\n";
+        } else {
+            if (r1[0] == 'f') {
+                std::stringstream query2;
+                query2 << "UPDATE single_passes SET status_factory = true, pass_using = true, enter_time = now() WHERE "
+                << "id = " << list_pass[selected].id << ";";
+                PGresult *res2 = PQexec(conn,query2.str().c_str());
+            } else {
+                std::stringstream query2;
+                query2 << "UPDATE single_passes SET status_factory = false, status_pass = false, exit_time = now() WHERE "
+                       << "id = " << list_pass[selected].id << ";";
+                PGresult *res2 = PQexec(conn,query2.str().c_str());
+            }
+        }
+    }
+    list_view_refresh();
 };
 
 void list_view_refresh(){
     if (output_mode != 0) {
+        std::string surname_search = gtk_entry_get_text(GTK_ENTRY(SurnameSearchEntry));
+        std::string name_search = gtk_entry_get_text(GTK_ENTRY(NameSearchEntry));
+        std::string fathername_search = gtk_entry_get_text(GTK_ENTRY(FathernameSearchEntry));
+        std::string document_search;
+        if (type_user == CHECKPOINT_AFOOT) {
+            document_search = gtk_entry_get_text(GTK_ENTRY(DocumentSearchEntry));
+        } else {
+            document_search = "";
+        }
+        std::string car_number_search;
+        if (type_user == CHECKPOINT_CAR) {
+            car_number_search = gtk_entry_get_text(GTK_ENTRY(CarNumberEntry));
+        } else {
+            car_number_search = "";
+        }
         std::stringstream query;
-        query << "SELECT * FROM single_passes WHERE ";
+        query << "SELECT * FROM single_passes WHERE ((surname LIKE '%" << surname_search << "%') AND (name LIKE '%" <<
+        name_search << "%') AND (fathername LIKE '%" << fathername_search << "%') AND (number_document LIKE '%" <<
+        document_search << "%') AND (num_auto LIKE '%" << car_number_search << "%') AND ";
         switch (output_mode) {
             case SHOW_MY:
-                query << "((id_director = " << id_user <<
+                query << "(id_director = " << id_worker <<
                 ") AND (pass_using = false));";
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumDocumentColumn),true);
@@ -412,10 +441,10 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 switch (type_user) {
                     case CHECKPOINT_AFOOT:
-                        query << "((status_pass = true) AND (status_factory = false) AND (driver = false));";
+                        query << "(status_pass = true) AND (status_factory = false) AND (driver = false));";
                         break;
                     default:
-                        query << "((status_pass = true) AND (status_factory = false) AND (driver = true));";
+                        query << "(status_pass = true) AND (status_factory = false) AND (driver = true));";
                 }
                 break;
             case LET:
@@ -439,10 +468,10 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 switch (type_user) {
                     case CHECKPOINT_AFOOT:
-                        query << "((status_factory = true) AND (driver = false));";
+                        query << "(status_factory = true) AND (driver = false));";
                         break;
                     default:
-                        query << "((status_factory = true) AND (driver = true));";
+                        query << "(status_factory = true) AND (driver = true));";
                 }
                 break;
             case HISTORY:
@@ -458,7 +487,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),true);
-                query << "pass_using = true;";
+                query << "(pass_using = true));";
                 break;
             case APOLOGY:
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
@@ -473,7 +502,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
-                query << "((status_appology = true) OR (status_appology IS NULL));";
+                query << "((status_appology = true) OR (status_appology IS NULL)));";
                 std::cout << query.str();
                 break;
             case FUTURE:
@@ -489,7 +518,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
-                query << "((status_appology = true) OR (status_appology = NULL));";
+                query << "((status_appology = true) OR (status_appology = NULL)));";
                 break;
             default:
                 journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"

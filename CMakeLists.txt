@@ -4,7 +4,7 @@ project(SinglePassSystem)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 
-set(SOURCE_FILES main.cpp LoginApp.h main_settings.h SinglePassApp.h OrderPassApp.h)
+set(SOURCE_FILES main.cpp LoginApp.h main_settings.h SinglePassApp.h OrderPassApp.h MessengerApp.h)
 add_executable(SinglePassSystem ${SOURCE_FILES})
 
 find_package(PostgreSQL REQUIRED)

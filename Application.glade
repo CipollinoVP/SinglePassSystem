@@ -249,6 +249,16 @@
       </object>
     </child>
   </object>
+  <object class="GtkListStore" id="MessageChooseList">
+    <columns>
+      <!-- column-name Date -->
+      <column type="gchararray"/>
+      <!-- column-name Sender -->
+      <column type="gchararray"/>
+      <!-- column-name Title -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="MessengerWindow">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Пропускная система: мессенджер</property>
@@ -466,7 +476,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">label</property>
+                    <property name="label" translatable="yes">Кому</property>
                   </object>
                   <packing>
                     <property name="left-attach">0</property>
@@ -477,7 +487,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">label</property>
+                    <property name="label" translatable="yes">Тема</property>
                   </object>
                   <packing>
                     <property name="left-attach">0</property>
@@ -488,7 +498,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">label</property>
+                    <property name="label" translatable="yes">Сообщение</property>
                   </object>
                   <packing>
                     <property name="left-attach">0</property>
@@ -532,33 +542,57 @@
               </packing>
             </child>
             <child>
-              <object class="GtkTreeView" id="ListMessages">
+              <object class="GtkScrolledWindow">
+                <property name="width-request">270</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
-                </child>
+                <property name="shadow-type">in</property>
                 <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="title" translatable="yes">Получатель</property>
+                  <object class="GtkViewport">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkCellRendererText" id="DateTextMessage"/>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="title" translatable="yes">Отправитель</property>
-                    <child>
-                      <object class="GtkCellRendererText" id="SenderTextMessage"/>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="title" translatable="yes">Тема</property>
-                    <child>
-                      <object class="GtkCellRendererText" id="TitleTextMessage"/>
+                      <object class="GtkTreeView" id="ListMessages">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="model">MessageChooseList</property>
+                        <child internal-child="selection">
+                          <object class="GtkTreeSelection"/>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn">
+                            <property name="title" translatable="yes">Дата</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="DateTextMessage"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="SenderRecipientColumn">
+                            <property name="title" translatable="yes">Отправитель</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="SenderTextMessage"/>
+                              <attributes>
+                                <attribute name="text">1</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn">
+                            <property name="title" translatable="yes">Тема</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="TitleTextMessage"/>
+                              <attributes>
+                                <attribute name="text">2</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
                     </child>
                   </object>
                 </child>
