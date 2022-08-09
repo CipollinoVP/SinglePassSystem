@@ -210,7 +210,7 @@ void ApprovalButtonH_Press(GtkWidget *object){
           <<"time_pass,date_query,time_query,id_director,driver,num_auto,organization_custom,commentary)"<< std::endl
           <<" VALUES ('" << surname << "','" << name <<"','" << fathername << "','" <<
           type_document << "','" << num_document << "','" << organization << "','"<< date_pass << "','" <<
-          time_pass << "',now(),now(),"<< id_user << ",";
+          time_pass << "',now(),now(),"<< id_worker << ",";
     if (driver){
         query << "true" << ",'" << num_auto << "','"
               << order_organization << "','" << commentary << "');";

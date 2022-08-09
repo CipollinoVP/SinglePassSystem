@@ -67,9 +67,6 @@ GtkWidget *CancelButtonDialog2;
 GtkWidget *DeclineButtonDialog;
 GtkWidget *DeclineDialog;
 
-bool not_use_dialog = true;
-bool result_dialog = false;
-
 static void create_window_SinglePassApp();
 
 int SinglePassApp(int argc, char *argv[]);
@@ -186,7 +183,7 @@ static void create_window_SinglePassApp(){
         g_critical("Ошибка при получении виджета окна\n");
     if(!(ExitButton = GTK_WIDGET(gtk_builder_get_object(builder, "ExitButton"))))
         g_critical("Ошибка при получении виджета окна\n");
-    if ((type_user == ORDER_BOSS) || (type_user == ORDER_TENANT)) {
+    if ((type_user == ORDER_BOSS) || (type_user == ORDER_TENANT) || (type_user == MATCHING_BOSS)) {
         if (!(CancelButton = GTK_WIDGET(gtk_builder_get_object(builder, "CancelButton"))))
             g_critical("Ошибка при получении виджета окна\n");
         gtk_widget_set_visible(CancelButton,true);
@@ -224,7 +221,7 @@ static void create_window_SinglePassApp(){
         gtk_widget_set_visible(GridCar,true);
         g_signal_connect(G_OBJECT(CarNumberEntry), "changed", G_CALLBACK(SearchEntry_edit), NULL);
     }
-    if ((type_user == ORDER_TENANT) || (type_user == ORDER_BOSS)) {
+    if ((type_user == ORDER_TENANT) || (type_user == ORDER_BOSS) || (type_user == MATCHING_BOSS)) {
         if (!(EditOrderButton = GTK_WIDGET(gtk_builder_get_object(builder, "EditOrderButton"))))
             g_critical("Ошибка при получении виджета окна\n");
         gtk_widget_set_visible(EditOrderButton,true);
@@ -282,31 +279,64 @@ void OrderSinglePassButton_click(GtkWidget *object){
 };
 
 void ShowPersonalPassButton_click(GtkWidget *object){
+    gtk_widget_set_visible(CancelButton,true);
+    gtk_widget_set_visible(EditOrderButton,true);
+    gtk_widget_set_visible(ReSendOrderButton,true);
+    if (type_user == MATCHING_BOSS) {
+        gtk_widget_set_visible(DeclineButton,false);
+        gtk_widget_set_visible(AcceptButton,false);
+    }
     output_mode = SHOW_MY;
     list_view_refresh();
 };
 
 void HistoryPassesButton_click(GtkWidget *object){
+    if ((type_user == CHECKPOINT_CAR) || (type_user == CHECKPOINT_AFOOT)) {
+        gtk_widget_set_visible(CheckpointButton,false);
+    }
+    if (type_user == MATCHING_BOSS) {
+        gtk_widget_set_visible(CancelButton,false);
+        gtk_widget_set_visible(EditOrderButton,false);
+        gtk_widget_set_visible(ReSendOrderButton,false);
+        gtk_widget_set_visible(DeclineButton,false);
+        gtk_widget_set_visible(AcceptButton,false);
+    }
     output_mode = HISTORY;
     list_view_refresh();
 };
 
 void ApprovalPassesButton_click(GtkWidget *object){
+    gtk_widget_set_visible(DeclineButton,true);
+    gtk_widget_set_visible(AcceptButton,true);
+    gtk_widget_set_visible(CancelButton,false);
+    gtk_widget_set_visible(EditOrderButton,false);
+    gtk_widget_set_visible(ReSendOrderButton,false);
     output_mode = APOLOGY;
     list_view_refresh();
 };
 
 void AdmitButton_click(GtkWidget *object){
+    gtk_widget_set_visible(CheckpointButton,true);
     output_mode = ADMIT;
     list_view_refresh();
 };
 
 void LetButton_click(GtkWidget *object){
+    gtk_widget_set_visible(CheckpointButton,true);
     output_mode = LET;
     list_view_refresh();
 };
 
 void FuturePassButton_click(GtkWidget *object){
+    if ((type_user == CHECKPOINT_CAR) || (type_user == CHECKPOINT_AFOOT)) {
+        gtk_widget_set_visible(CheckpointButton, false);
+    } else {
+        gtk_widget_set_visible(DeclineButton,false);
+        gtk_widget_set_visible(AcceptButton,false);
+        gtk_widget_set_visible(CancelButton,false);
+        gtk_widget_set_visible(EditOrderButton,false);
+        gtk_widget_set_visible(ReSendOrderButton,false);
+    }
     output_mode = FUTURE;
     list_view_refresh();
 };
@@ -361,6 +391,7 @@ void DeclineButton_click(GtkWidget *object){
     g_signal_connect(G_OBJECT(DeclineDialog),"destroy-event",G_CALLBACK(CancelButtonDialog_click),NULL);
     g_signal_connect(G_OBJECT(CancelButtonDialog2),"clicked",G_CALLBACK(CancelButtonDialog_click),NULL);
     g_signal_connect(G_OBJECT(DeclineButtonDialog),"clicked",G_CALLBACK(DeclineButtonDialog_click),NULL);
+    gtk_widget_show(DeclineDialog);
 };
 
 void SearchEntry_edit(GtkWidget *object){
@@ -507,7 +538,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumDocumentColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumCarColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NameOrdererColumn),true);
-                gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(StatusApologyColumn),false);
+                gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(StatusApologyColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(OrderOrganizationColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnteringOrganizationColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(DateOrderColumn),false);
@@ -515,7 +546,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),true);
-                query << "(pass_using = true));";
+                query << "((pass_using = true) OR (current_date > date_pass)));";
                 break;
             case APOLOGY:
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
@@ -530,7 +561,8 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
-                query << "((status_appology = true) OR (status_appology IS NULL)));";
+                query << "(((status_appology = true) OR (status_appology IS NULL)) AND ((date_pass = current_date)"
+                <<" OR (date_pass > current_date))));";
                 std::cout << query.str();
                 break;
             case FUTURE:
@@ -538,7 +570,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumDocumentColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumCarColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NameOrdererColumn),true);
-                gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(StatusApologyColumn),true);
+                gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(StatusApologyColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(OrderOrganizationColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnteringOrganizationColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(DateOrderColumn),true);
@@ -546,7 +578,10 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
-                query << "((status_appology = true) OR (status_appology = NULL)));";
+                if (type_user == CHECKPOINT_AFOOT)
+                    query << "((status_pass = true) AND (date_pass > current_date) AND (driver = false)));";
+                else
+                    query << "((status_pass = true) AND (date_pass > current_date) AND (driver = true)));";
                 break;
             default:
                 journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
@@ -618,7 +653,6 @@ void list_view_refresh(){
             switch (output_mode) {
                 case ADMIT:
                 case LET:
-                case HISTORY:
                 case FUTURE:
                     status_str = "";
                     input_table = decline;
@@ -642,6 +676,15 @@ void list_view_refresh(){
                             journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
                                     << (time(nullptr) % (3600)) / 60 << ":" << (time(nullptr) % (60))
                                     << ":  programm error: SinglePassApp.h:549" << "\n";
+                    }
+                    break;
+                case HISTORY:
+                    if (s_pass.pass_using) {
+                        status_str = "Использован";
+                        input_table = accept;
+                    } else {
+                        status_str = "Не использован";
+                        input_table = decline;
                     }
                     break;
                 default:
@@ -689,13 +732,22 @@ void DeclineButtonDialog_click(GtkWidget *object){
     PGresult *res = PQexec(conn,query.str().c_str());
     PGresult *res1 = PQexec(conn,query1.str().c_str());
     std::stringstream query2;
-    query2 << "SELECT id FROM register_user WHERE id_workers = " << list_pass[selected].id_director << ";";
+    query2 << "SELECT id FROM registers_user WHERE id_workers = " << list_pass[selected].id_director << ";";
     PGresult *res2 = PQexec(conn,query2.str().c_str());
+    std::string id_recepient = PQgetvalue(res2,0,0);
+    std::string message = gtk_entry_get_text(GTK_ENTRY(CommentaryDeclineEntry));
+    std::string title = "Отклонение заявки";
+    std::stringstream query3;
+    query3 << "INSERT INTO messages (id_sender,id_recepient,title,message,time_send) VALUES (" << id_user << "," <<
+    id_recepient << ",'" << title << "','" << message << "',now());";
+    std::cout << query3.str();
+    PQexec(conn,query3.str().c_str());
+    gtk_widget_destroy(DeclineDialog);
     list_view_refresh();
 }
 
 void CancelButtonDialog_click(GtkWidget *object){
-
+    gtk_widget_destroy(DeclineDialog);
 };
 
 #endif //SINGLEPASSSYSTEM_SINGLEPASSAPP_H
