@@ -63,6 +63,11 @@ struct s_single_pass{
     std::string organization_custom;
     int status_appology = -1;
     std::string commentary;
+    bool no_single = false;
+    std::string mark_auto;
+    std::string cargo;
+    std::string finish_time;
+    std::string commentary_decline;
 };
 
 char* const path_glade = "./Application.glade";

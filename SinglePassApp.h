@@ -644,6 +644,16 @@ void list_view_refresh(){
                 s_pass.status_appology = -1;
             }
             s_pass.commentary = PQgetvalue(res,i,21);
+            char *s5_f = PQgetvalue(res,i,22);
+            if (s5_f[0] == 'f') {
+                s_pass.no_single = false;
+            } else if (s5_f[0] == 't') {
+                s_pass.no_single = true;
+            }
+            s_pass.finish_time = PQgetvalue(res,i,23);
+            s_pass.mark_auto = PQgetvalue(res,i,24);
+            s_pass.cargo = PQgetvalue(res,i,25);
+            s_pass.commentary_decline = PQgetvalue(res,i,26);
             list_pass.push_back(s_pass);
             std::string status_str;
             GdkRGBA consideration = {1.0,1.0,0,1.0};

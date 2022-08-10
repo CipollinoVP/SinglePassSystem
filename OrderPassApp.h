@@ -24,6 +24,12 @@ GtkWidget *OrganizationEnterO;
 GtkWidget *OrderButtonO;
 GtkWidget *CommentaryEntryO;
 GtkWidget *DriverSwitchO;
+GtkWidget *NoSingleSwitchO;
+GtkWidget *FinishDateCalendarO;
+GtkWidget *GridDateFinishO;
+GtkWidget *MarkAutoEntryO;
+GtkWidget *CargoEntryO;
+GtkWidget *GridAutoInfoO;
 
 
 //Виджеты диалога
@@ -48,6 +54,10 @@ bool driver;
 std::string commentary;
 int id_customer = -1;
 std::string info_label_str;
+std::string mark_auto;
+std::string cargo_auto;
+bool no_single;
+std::string date_finish;
 
 static void create_window_single_pass_order();
 
@@ -70,6 +80,10 @@ void dialogE();
 extern "C" void Press_OrderButtonOE(GtkWidget *object);
 
 extern "C" void ApprovalButtonHE_Press(GtkWidget *object);
+
+extern "C" void Switch_No_Single(GtkWidget *object);
+
+extern "C" void Switch_Choose_Auto(GtkWidget *object);
 
 static void create_window_single_pass_order(){
     GtkBuilder *builder;
@@ -112,6 +126,20 @@ static void create_window_single_pass_order(){
         g_critical("Ошибка при получении виджета окна\n");
     if(!(MinutEnterO = GTK_WIDGET(gtk_builder_get_object(builder, "MinutComboBox"))))
         g_critical("Ошибка при получении виджета окна\n");
+    if(!(NoSingleSwitchO = GTK_WIDGET(gtk_builder_get_object(builder, "NoSingleSwitch"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(FinishDateCalendarO = GTK_WIDGET(gtk_builder_get_object(builder, "FinishDateCalendar"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(GridDateFinishO = GTK_WIDGET(gtk_builder_get_object(builder, "GridDateFinish"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(FinishDateCalendarO = GTK_WIDGET(gtk_builder_get_object(builder, "FinishDateCalendar"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(MarkAutoEntryO = GTK_WIDGET(gtk_builder_get_object(builder, "MarkAutoEntry"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(CargoEntryO = GTK_WIDGET(gtk_builder_get_object(builder, "CargoEntry"))))
+        g_critical("Ошибка при получении виджета окна\n");
+    if(!(GridAutoInfoO = GTK_WIDGET(gtk_builder_get_object(builder, "GridAutoInfo"))))
+        g_critical("Ошибка при получении виджета окна\n");
     g_object_unref(builder);
 }
 
@@ -119,6 +147,8 @@ void OrderPassApp(){
     create_window_single_pass_order();
     g_signal_connect(G_OBJECT(CancelButtonO), "clicked", G_CALLBACK(CancelButtonO_press), NULL);
     g_signal_connect(G_OBJECT(OrderButtonO), "clicked", G_CALLBACK(Press_OrderButtonO), NULL);
+    g_signal_connect(G_OBJECT(NoSingleSwitchO), "state-set", G_CALLBACK(Switch_No_Single), NULL);
+    g_signal_connect(G_OBJECT(DriverSwitchO), "state-set", G_CALLBACK(Switch_Choose_Auto), NULL);
     gtk_widget_show(windowO);
 };
 
@@ -137,6 +167,8 @@ void Press_OrderButtonO(GtkWidget *object){
     type_document = std::string(gtk_entry_get_text(GTK_ENTRY(DocumentTypeEnterO)));
     num_document = std::string(gtk_entry_get_text(GTK_ENTRY(DocumentNumEnterO)));
     organization = std::string(gtk_entry_get_text(GTK_ENTRY(OrganizationEnterO)));
+    mark_auto = std::string(gtk_entry_get_text(GTK_ENTRY(MarkAutoEntryO)));
+    cargo_auto = std::string(gtk_entry_get_text(GTK_ENTRY(CargoEntryO)));
     guint month;
     guint year;
     guint day;
@@ -153,18 +185,26 @@ void Press_OrderButtonO(GtkWidget *object){
     driver = gtk_switch_get_active(GTK_SWITCH(DriverSwitchO));
     num_auto = std::string(gtk_entry_get_text(GTK_ENTRY(NumAutoEntryO)));
     commentary = std::string(gtk_entry_get_text(GTK_ENTRY(CommentaryEntryO)));
+    no_single = gtk_switch_get_active(GTK_SWITCH(NoSingleSwitchO));
+    gtk_calendar_get_date(GTK_CALENDAR(FinishDateCalendarO),&year,&month,&day);
+    std::stringstream finish_date;
+    finish_date << year << "-" << month << "-" << day;
+    date_finish = finish_date.str();
     std::stringstream info_label;
     info_label << "Подтвердите заказ пропуска\n" << "Фамилия: " << surname << std::endl <<
                "Имя: " << name << std::endl << "Отчество: " << fathername << std::endl;
+    info_label << "Тип документа: " << type_document << std::endl << "Номер документа: " << num_document << std::endl <<
+               "Организация: " << organization << std::endl << "Дата: " << date_pass << std::endl <<
+               "Время: " << time_pass << std::endl << "Комментарий: " << commentary << std::endl;
     if (driver) {
-        info_label << "Водитель: да\n";
+        info_label << "Водитель: да\n" << "Номер авто: " << num_auto << std::endl
+        << "Марка и цвет машины: " << mark_auto << std::endl << "Груз:" << cargo_auto << std::endl;
     } else {
         info_label << "Водитель: нет\n";
     }
-    info_label << "Тип документа: " << type_document << std::endl << "Номер документа: " << num_document << std::endl
-    << "Номер авто: " << num_auto << std::endl <<
-               "Организация: " << organization << std::endl << "Дата: " << date_pass << std::endl <<
-               "Время: " << time_pass << std::endl << "Комментарий: " << commentary;
+    if (no_single) {
+        info_label << "Договременный, дата окончания: " << date_finish;
+    }
     info_label_str = info_label.str();
     dialog();
 }
@@ -207,17 +247,24 @@ void ApprovalButtonH_Press(GtkWidget *object){
     std::stringstream  query;
     query << "INSERT INTO single_passes "<< std::endl
           <<"(surname,name,fathername,type_document,number_document,organization,date_pass,"
-          <<"time_pass,date_query,time_query,id_director,driver,num_auto,organization_custom,commentary)"<< std::endl
+          <<"time_pass,date_query,time_query,id_director,driver,num_auto,organization_custom,commentary,no_single,"<<
+          "finish_time,mark_car,cargo)"<< std::endl
           <<" VALUES ('" << surname << "','" << name <<"','" << fathername << "','" <<
           type_document << "','" << num_document << "','" << organization << "','"<< date_pass << "','" <<
           time_pass << "',now(),now(),"<< id_worker << ",";
     if (driver){
-        query << "true" << ",'" << num_auto << "','"
-              << order_organization << "','" << commentary << "');";
+        query << "true" << ",'";
     } else {
-        query << "false" << ",'" << num_auto << "','"
-              << order_organization << "','" << commentary << "');";
+        query << "false" << ",'";
     }
+    query << num_auto << "','"
+          << order_organization << "','" << commentary << "',";
+    if (no_single){
+        query << "true" << ",'";
+    } else {
+        query << "false" << ",'";
+    }
+    query << date_finish << "','" << mark_auto << "','" << cargo_auto << "');";
     PQexec(conn,query.str().c_str());
     if (type_user == MATCHING_BOSS) {
         std::stringstream query1;
@@ -234,6 +281,8 @@ void EditPassApp(s_single_pass const& edited_pass){
     create_window_single_pass_order();
     g_signal_connect(G_OBJECT(CancelButtonO), "clicked", G_CALLBACK(CancelButtonO_press), NULL);
     g_signal_connect(G_OBJECT(OrderButtonO), "clicked", G_CALLBACK(Press_OrderButtonOE), NULL);
+    g_signal_connect(G_OBJECT(NoSingleSwitchO), "state-set", G_CALLBACK(Switch_No_Single), NULL);
+    g_signal_connect(G_OBJECT(DriverSwitchO), "state-set", G_CALLBACK(Switch_Choose_Auto), NULL);
     gtk_entry_set_text(GTK_ENTRY(SurnameEnterO),edited_pass.surname.c_str());
     gtk_entry_set_text(GTK_ENTRY(NameEnterO),edited_pass.name.c_str());
     gtk_entry_set_text(GTK_ENTRY(FathernameEnterO),edited_pass.fathername.c_str());
@@ -252,6 +301,14 @@ void EditPassApp(s_single_pass const& edited_pass){
                               std::stoi(edited_pass.date_pass.substr(5,2))-1,
                               std::stoi(edited_pass.date_pass.substr(0,4)));
     gtk_switch_set_active(GTK_SWITCH(DriverSwitchO),edited_pass.driver);
+    gtk_switch_set_active(GTK_SWITCH(NoSingleSwitchO),edited_pass.no_single);
+    gtk_entry_set_text(GTK_ENTRY(CargoEntryO),edited_pass.cargo.c_str());
+    gtk_entry_set_text(GTK_ENTRY(MarkAutoEntryO),edited_pass.mark_auto.c_str());
+    gtk_calendar_select_day(GTK_CALENDAR(FinishDateCalendarO),
+                            std::stoi(edited_pass.finish_time.substr(8,2)));
+    gtk_calendar_select_month(GTK_CALENDAR(FinishDateCalendarO),
+                              std::stoi(edited_pass.finish_time.substr(5,2))-1,
+                              std::stoi(edited_pass.finish_time.substr(0,4)));
     gtk_widget_show(windowO);
 }
 
@@ -278,18 +335,28 @@ void Press_OrderButtonOE(GtkWidget *object){
     driver = gtk_switch_get_active(GTK_SWITCH(DriverSwitchO));
     num_auto = std::string(gtk_entry_get_text(GTK_ENTRY(NumAutoEntryO)));
     commentary = std::string(gtk_entry_get_text(GTK_ENTRY(CommentaryEntryO)));
+    no_single = gtk_switch_get_active(GTK_SWITCH(NoSingleSwitchO));
+    gtk_calendar_get_date(GTK_CALENDAR(FinishDateCalendarO),&year,&month,&day);
+    cargo_auto = std::string(gtk_entry_get_text(GTK_ENTRY(CargoEntryO)));
+    mark_auto = std::string(gtk_entry_get_text(GTK_ENTRY(MarkAutoEntryO)));
+    std::stringstream finish_date;
+    finish_date << year << "-" << month << "-" << day;
+    date_finish = finish_date.str();
     std::stringstream info_label;
     info_label << "Подтвердите изменения\n" << "Фамилия: " << surname << std::endl <<
                "Имя: " << name << std::endl << "Отчество: " << fathername << std::endl;
+    info_label << "Тип документа: " << type_document << std::endl << "Номер документа: " << num_document << std::endl <<
+               "Организация: " << organization << std::endl << "Дата: " << date_pass << std::endl <<
+               "Время: " << time_pass << std::endl << "Комментарий: " << commentary << std::endl;
     if (driver) {
-        info_label << "Водитель: да\n";
+        info_label << "Водитель: да\n" << "Номер авто: " << num_auto << std::endl
+                   << "Марка и цвет машины: " << mark_auto << std::endl << "Груз:" << cargo_auto << std::endl;
     } else {
         info_label << "Водитель: нет\n";
     }
-    info_label << "Тип документа: " << type_document << std::endl << "Номер документа: " << num_document << std::endl
-               << "Номер авто: " << num_auto << std::endl <<
-               "Организация: " << organization << std::endl << "Дата: " << date_pass << std::endl <<
-               "Время: " << time_pass << std::endl << "Комментарий: " << commentary;
+    if (no_single) {
+        info_label << "Договременный, дата окончания: " << date_finish;
+    }
     info_label_str = info_label.str();
     dialogE();
 };
@@ -303,10 +370,17 @@ void ApprovalButtonHE_Press(GtkWidget *object){
     num_auto << "', commentary = '" << commentary << "', date_pass = '" <<
     date_pass << "', time_pass = '" << time_pass << "', driver = ";
     if (driver){
-        query << "true, status_appology = NULL, status_pass = FALSE WHERE id = " << id << ";";
+        query << "true, status_appology = NULL";
     } else {
-        query << "false, status_appology = NULL, status_pass = FALSE WHERE id = " << id << ";";
+        query << "false, status_appology = NULL";
     }
+    if (no_single){
+        query << ", no_single = TRUE";
+    } else {
+        query << ", no_single = FALSE";
+    }
+    query << ", status_pass = FALSE, mark_car ='"<< mark_auto
+    <<"', cargo ='"<< cargo_auto <<"', finish_time = '" << date_finish << "' WHERE id = " << id << ";";
     PQexec(conn,query.str().c_str());
     if (type_user == MATCHING_BOSS) {
         std::stringstream query1;
@@ -342,6 +416,22 @@ void dialogE(){
     g_signal_connect(G_OBJECT(AcceptButtonH),"clicked", G_CALLBACK(ApprovalButtonHE_Press),NULL);
     gtk_label_set_text(GTK_LABEL(LabelH),info_label_str.c_str());
     gtk_dialog_run(GTK_DIALOG(DialogH));
+}
+
+void Switch_No_Single(GtkWidget *object){
+    if (gtk_switch_get_active(GTK_SWITCH(NoSingleSwitchO))) {
+        gtk_widget_set_visible(GridDateFinishO,true);
+    } else {
+        gtk_widget_set_visible(GridDateFinishO,false);
+    }
+}
+
+void Switch_Choose_Auto(GtkWidget *object){
+    if (gtk_switch_get_active(GTK_SWITCH(DriverSwitchO))) {
+        gtk_widget_set_visible(GridAutoInfoO,true);
+    } else {
+        gtk_widget_set_visible(GridAutoInfoO,false);
+    }
 }
 
 #endif //SINGLEPASSSYSTEM_ORDERPASSAPP_H
