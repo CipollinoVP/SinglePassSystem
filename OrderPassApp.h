@@ -187,6 +187,7 @@ void Press_OrderButtonO(GtkWidget *object){
     commentary = std::string(gtk_entry_get_text(GTK_ENTRY(CommentaryEntryO)));
     no_single = gtk_switch_get_active(GTK_SWITCH(NoSingleSwitchO));
     gtk_calendar_get_date(GTK_CALENDAR(FinishDateCalendarO),&year,&month,&day);
+    month++;
     std::stringstream finish_date;
     finish_date << year << "-" << month << "-" << day;
     date_finish = finish_date.str();
@@ -340,6 +341,7 @@ void Press_OrderButtonOE(GtkWidget *object){
     cargo_auto = std::string(gtk_entry_get_text(GTK_ENTRY(CargoEntryO)));
     mark_auto = std::string(gtk_entry_get_text(GTK_ENTRY(MarkAutoEntryO)));
     std::stringstream finish_date;
+    month++;
     finish_date << year << "-" << month << "-" << day;
     date_finish = finish_date.str();
     std::stringstream info_label;

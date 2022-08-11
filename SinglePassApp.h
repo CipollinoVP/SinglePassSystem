@@ -417,25 +417,69 @@ void ReSendOrderButton_click(GtkWidget *object){
 void CheckpointButton_click(GtkWidget *object){
     if (selected != -1) {
         std::stringstream query1;
-        query1 << "SELECT status_factory FROM single_passes WHERE id = " << list_pass[selected].id << ";";
-        PGresult *res1 = PQexec(conn,query1.str().c_str());
-        char *r1 = PQgetvalue(res1,0,0);
-        if (r1 == nullptr) {
+        query1 << "SELECT status_factory, no_single FROM single_passes WHERE id = " << list_pass[selected].id << ";";
+        PGresult *res1 = PQexec(conn, query1.str().c_str());
+        int n = PQntuples(res1);
+        if (n == 0) {
             journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
                     << (time(nullptr) % (3600)) / 60 << ":" << (time(nullptr) % (60)) <<
                     ": Development error: SinglePassApp.h:367\n";
-        } else {
+            return;
+        }
+        char *r1 = PQgetvalue(res1, 0, 0);
+        char *r2 = PQgetvalue(res1, 0, 1);
+        if (r2[0] == 'f') {
             if (r1[0] == 'f') {
                 std::stringstream query2;
                 query2 << "UPDATE single_passes SET status_factory = true, pass_using = true, enter_time = now() WHERE "
-                << "id = " << list_pass[selected].id << ";";
-                PGresult *res2 = PQexec(conn,query2.str().c_str());
-            } else {
-                std::stringstream query2;
-                query2 << "UPDATE single_passes SET status_factory = false, status_pass = false, exit_time = now() WHERE "
                        << "id = " << list_pass[selected].id << ";";
-                PGresult *res2 = PQexec(conn,query2.str().c_str());
+                PGresult *res2 = PQexec(conn, query2.str().c_str());
+            } else {
+                std::stringstream query_help;
+                query_help << "SELECT main_pass FROM single_passes WHERE ((id = " << list_pass[selected].id << ") AND "
+                << "(main_pass IS NOT NULL));";
+                PGresult *res_help = PQexec(conn,query_help.str().c_str());
+                int n_help = PQntuples(res_help);
+                if (n_help == 0) {
+                    std::stringstream query2;
+                    query2
+                            << "UPDATE single_passes SET status_factory = false, status_pass = false, exit_time = now() WHERE "
+                            << "id = " << list_pass[selected].id << ";";
+                    PGresult *res2 = PQexec(conn, query2.str().c_str());
+                } else {
+                    std::stringstream query2;
+                    query2
+                            << "UPDATE single_passes SET status_factory = false, status_pass = false, exit_time = now() WHERE "
+                            << "id = " << list_pass[selected].id << ";";
+                    PGresult *res2 = PQexec(conn, query2.str().c_str());
+                    std::string n_main = PQgetvalue(res_help,0,0);
+                    std::stringstream query3;
+                    query3 << "UPDATE single_passes SET status_factory = false WHERE id = " << n_main << ";";
+                    PQexec(conn,query3.str().c_str());
+                }
             }
+        } else {
+            std::stringstream query2;
+            query2 << "INSERT INTO single_passes (surname,name,fathername,driver,date_pass,time_pass,"
+            <<"date_query,time_query,enter_time,pass_using,id_director,status_factory,status_appology,main_pass,"<<
+            "cargo,mark_car,organization,organization_custom,type_document,number_document,num_auto) VALUES ('" <<
+            list_pass[selected].surname << "','" << list_pass[selected].name << "','" << list_pass[selected].fathername
+            << "',";
+            if (list_pass[selected].driver) {
+                query2 << "true,";
+            } else {
+                query2 << "false,";
+            }
+            query2 << "now(),now(),now(),now(),now(),true," << list_pass[selected].id_director << ",true,true,"
+            << list_pass[selected].id << ",'" << list_pass[selected].cargo << "','" << list_pass[selected].mark_auto <<
+            "','" << list_pass[selected].organization << "','" << list_pass[selected].organization_custom << "','" <<
+            list_pass[selected].type_document << "','" << list_pass[selected].number_document << "','"
+            << list_pass[selected].num_auto << "');";
+            PQexec(conn,query2.str().c_str());
+            std::stringstream query3;
+            query3 << "UPDATE single_passes SET status_factory = true WHERE "
+                   << "id = " << list_pass[selected].id << ";";
+            PQexec(conn, query3.str().c_str());
         }
     }
     list_view_refresh();
@@ -465,7 +509,8 @@ void list_view_refresh(){
         switch (output_mode) {
             case SHOW_MY:
                 query << "(id_director = " << id_worker <<
-                ") AND (pass_using = false));";
+                ") AND (pass_using = false) AND ((date_pass >= current_date) OR"<<
+                " ((no_single = true) AND (finish_time >= current_date))));";
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumDocumentColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(NumCarColumn),true);
@@ -500,10 +545,16 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 switch (type_user) {
                     case CHECKPOINT_AFOOT:
-                        query << "(status_pass = true) AND (status_factory = false) AND (driver = false));";
+                        query << "(((no_single = true) AND (date_pass <= current_date) AND "<<
+                        "(finish_time >= current_date)) OR ((no_single = false) AND"<<
+                        " (date_pass = current_date))) AND (status_pass = true) "
+                        <<"AND (status_factory = false) AND (driver = false));";
                         break;
                     default:
-                        query << "(status_pass = true) AND (status_factory = false) AND (driver = true));";
+                        query << "(((no_single = true) AND (date_pass <= current_date) AND "<<
+                              "(finish_time >= current_date)) OR ((no_single = false) AND"<<
+                              " (date_pass = current_date))) AND (status_pass = true) "
+                              <<"AND (status_factory = false) AND (driver = true));";
                 }
                 break;
             case LET:
@@ -527,10 +578,10 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 switch (type_user) {
                     case CHECKPOINT_AFOOT:
-                        query << "(status_factory = true) AND (driver = false));";
+                        query << "(no_single = false) AND (status_factory = true) AND (driver = false));";
                         break;
                     default:
-                        query << "(status_factory = true) AND (driver = true));";
+                        query << "(no_single = false) AND (status_factory = true) AND (driver = true));";
                 }
                 break;
             case HISTORY:
@@ -546,7 +597,7 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(CommentaryColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),true);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),true);
-                query << "((pass_using = true) OR (current_date > date_pass)));";
+                query << "((no_single = false) AND ((pass_using = true) OR (current_date > date_pass))));";
                 break;
             case APOLOGY:
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
@@ -563,7 +614,6 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 query << "(((status_appology = true) OR (status_appology IS NULL)) AND ((date_pass = current_date)"
                 <<" OR (date_pass > current_date))));";
-                std::cout << query.str();
                 break;
             case FUTURE:
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(TypeDocumentColumn),true);
@@ -579,9 +629,13 @@ void list_view_refresh(){
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(EnterTimeColumn),false);
                 gtk_tree_view_column_set_visible(GTK_TREE_VIEW_COLUMN(ExitTimeColumn),false);
                 if (type_user == CHECKPOINT_AFOOT)
-                    query << "((status_pass = true) AND (date_pass > current_date) AND (driver = false)));";
+                    query << "((status_pass = true) AND ((date_pass > current_date)"
+                    <<" OR ((no_single = true) AND (finish_time > current_date)))"
+                    <<" AND (driver = false)));";
                 else
-                    query << "((status_pass = true) AND (date_pass > current_date) AND (driver = true)));";
+                    query << "((status_pass = true) AND ((date_pass > current_date)"
+                          <<" OR ((no_single = true) AND (finish_time > current_date)))"
+                          <<" AND (driver = true)));";
                 break;
             default:
                 journal << (time(nullptr) % (24 * 3600)) / 3600 + 3 << ":"
