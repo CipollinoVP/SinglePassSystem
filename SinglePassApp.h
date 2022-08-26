@@ -19,6 +19,7 @@
 
 int output_mode = 0;
 
+//Выбранный элемент в списке пропусков
 int selected = -1;
 
 //Виджеты окна разовых пропусков
@@ -67,50 +68,76 @@ GtkWidget *CancelButtonDialog2;
 GtkWidget *DeclineButtonDialog;
 GtkWidget *DeclineDialog;
 
+//Инициализация окна
 static void create_window_SinglePassApp();
 
+
+//Основной рабочий метод
 int SinglePassApp(int argc, char *argv[]);
+
+
+//Далее в большом количестве обработчики событий, в основном нажатий кнопок
 
 G_MODULE_EXPORT void window_single_pass_destroy(GtkWidget *object);
 
+//Кнопки заказа пропусков, перекидывает на окно заказа
 G_MODULE_EXPORT void OrderSinglePassButton_click(GtkWidget *object);
 
+//Кнопки просмотра заказанных пользователем разовых пропусков
 G_MODULE_EXPORT void ShowPersonalPassButton_click(GtkWidget *object);
 
+//Кнопки просмотра истории разовых пропусков
 G_MODULE_EXPORT void HistoryPassesButton_click(GtkWidget *object);
 
+//Кнопки просмотра пропусков на утверждение
 G_MODULE_EXPORT void ApprovalPassesButton_click(GtkWidget *object);
 
+//Кнопки просмотра пропусков на вход с завода
 G_MODULE_EXPORT void AdmitButton_click(GtkWidget *object);
 
+//Кнопки просмотра пропусков на выход с завода
 G_MODULE_EXPORT void LetButton_click(GtkWidget *object);
 
+//Кнопки просмотра будущих пропусков
 G_MODULE_EXPORT void FuturePassButton_click(GtkWidget *object);
 
+//Кнопки вызова мессенджера
 G_MODULE_EXPORT void MessengerButton_click(GtkWidget *object);
 
+//Кнопки отмены конкретного пропуска
 G_MODULE_EXPORT void CancelButton_click(GtkWidget *object);
 
+//Кнопки одобрения конкретного пропуска
 G_MODULE_EXPORT void AcceptButton_click(GtkWidget *object);
 
+//Кнопки отказа в конкретном пропуске
 G_MODULE_EXPORT void DeclineButton_click(GtkWidget *object);
 
+//Кнопки поиска
 G_MODULE_EXPORT void SearchEntry_edit(GtkWidget *object);
 
+//Кнопки вызова редактора конкретного пропуска
 G_MODULE_EXPORT void EditOrderButton_click(GtkWidget *object);
 
+//Кнопки повторной отправки пропуска на утверждение
 G_MODULE_EXPORT void ReSendOrderButton_click(GtkWidget *object);
 
+//Кнопки регистрации прохода посетителя через КПП
 G_MODULE_EXPORT void CheckpointButton_click(GtkWidget *object);
 
+//Выбор элемента списка
 G_MODULE_EXPORT void PassesView_cursor_changed(GtkWidget *object);
 
+//Обработка кнопки отказа в разовом пропуске в диалоге
 G_MODULE_EXPORT void DeclineButtonDialog_click(GtkWidget *object);
 
+//Обработка кнопки отмены отказа в разовом пропуске в диалоге
 G_MODULE_EXPORT void CancelButtonDialog_click(GtkWidget *object);
 
+//Составление выводимого на экран списка
 void list_view_refresh();
 
+//Выводимый список
 std::vector<s_single_pass> list_pass(0);
 
 int SinglePassApp(int argc, char *argv[]){
